@@ -248,7 +248,7 @@
             
             <!-- Category 1: The Fun Cup (Interactive Ordering) -->
             <div class="mb-16">
-                <h3 class="sm:text-2xl md:text-3xl font-extrabold text-ester-pink mb-8 border-b-4 border-ester-pink/50 inline-block pb-2">Kategori 1: The FUN CUP (Premium 200ml)</h3>
+                <h3 class="text-2xl md:text-3xl font-extrabold text-ester-pink mb-8 border-b-4 border-ester-pink/50 inline-block pb-2">Kategori 1: The FUN CUP (Premium 200ml)</h3>
                 
                 <!-- Product Grid Container. Filled by JavaScript -->
                 <div id="fun-cup-products" class="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -259,7 +259,7 @@
             <!-- Category 2: The Party Pack (Consistent Ordering Interface, but Bigger Card) -->
             <div class="mb-16">
                 <!-- Warna text judul kategori menggunakan ester-yellow-dark -->
-                <h3 class="sm:text-2xl md:text-3xl font-extrabold text-ester-yellow-dark mb-8 border-b-4 border-ester-yellow-dark/50 inline-block pb-2">Kategori 2: The PARTY PACK (Family Size)</h3>
+                <h3 class="text-2xl md:text-3xl font-extrabold text-ester-yellow-dark mb-8 border-b-4 border-ester-yellow-dark/50 inline-block pb-2">Kategori 2: The PARTY PACK (Family Size)</h3>
                 <p class="text-gray-600 mb-8 max-w-xl">Pilih ukuran besar untuk stok di kulkas atau pesta.</p>
                 
                 <!-- Product Grid Container. Grid 1 kolom di mobile, 2 kolom di desktop/tablet -->
@@ -545,9 +545,10 @@
     <script>
         // Data Produk
         const products = [
-            { id: 'choco-mangga', name: 'Choco Mangga Delight', price: 12000, img: 'https://placehold.co/400x400/4E342E/FFC107?text=Choco+Mangga', category: 'cup' },
+            { id: 'choco-kismis', name: 'Choco Mangga Delight', price: 12000, img: 'https://placehold.co/400x400/4E342E/FFC107?text=Choco+Kismis', category: 'cup' },
             { id: 'choco-serut', name: 'Choco Serut Extra', price: 12000, img: 'https://placehold.co/400x400/4E342E/00BCD4?text=Choco+Serut', category: 'cup' },
             { id: 'choco-meiseis', name: 'Choco Meiseis Classic', price: 10000, img: 'https://placehold.co/400x400/4E342E/F48FB1?text=Choco+Meiseis', category: 'cup' },
+            { id: 'choco-oreo', name: 'Choco Roti Unik', price: 10000, img: 'https://placehold.co/400x400/4E342E/D4A95B?text=Choco+Oreo', category: 'cup' },
             { id: 'choco-roti', name: 'Choco Roti Unik', price: 10000, img: 'https://placehold.co/400x400/4E342E/D4A95B?text=Choco+Roti', category: 'cup' },
             // Data Party Pack 
             { id: 'party-500', name: '500ml Base Coklat', price: 35000, img: 'https://placehold.co/400x400/FFC107/4E342E?text=Party+Pack+500ml', category: 'pack', description: 'Porsi medium untuk 2-3 orang.' },
@@ -556,7 +557,7 @@
         
         // List Topping yang tersedia
         const availableToppings = [
-            'Mangga Segar', 'Serut Coklat', 'Meiseis Pelangi', 'Kacang Mede', 'Roti Tawar'
+            'Serut Coklat', 'Meiseis Pelangi', 'Kismis', 'Oreo', 'Roti Tawar'
         ];
 
         // State untuk menyimpan kuantitas (untuk tampilan tombol)
