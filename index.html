@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESTER - Es Puter Ceria, Antar Cepat!</title>
+    
+    <!-- Google Fonts: Poppins (Clean & Modern) & Pacifico (Playful for Logos) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons (Fun and modern icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    
+    <!-- Leaflet Geocoder CSS (Pencarian Lokasi) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+    <!-- Konfigurasi Tema Warna Ceria -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ester-cyan': '#00BCD4', // Biru Cyan Terang (Fun)
+                        'ester-yellow': '#FFC107', // Kuning Emas CERAH
+                        'ester-yellow-medium': '#E6A500', // Kuning/Gold Sedang
+                        'ester-yellow-dark': '#D4A000', // Kuning Emas Lebih Gelap
+                        'ester-pink': '#F48FB1', // Pink Muda (Sweet)
+                        'ester-dark': '#1F2937', // Teks
+                        'ester-light': '#F8F9FA',
+                        'ester-choco': '#4E342E' // Coklat untuk Base Rasa
+                    },
+                    fontFamily: {
+                        sans: ['"Poppins"', 'sans-serif'],
+                        logo: ['"Pacifico"', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom Background Pattern */
+        .dot-pattern {
+            background-color: #F8F9FA;
+            background-image: radial-gradient(#F48FB1 0.7px, transparent 0.7px);
+            background-size: 20px 20px;
+        }
+        /* Custom Button Animation */
+        .btn-interact {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .btn-interact:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Gaya untuk Product Card */
+        .product-card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            box-shadow: 8px 8px 16px #e0e0e0, -8px -8px 16px #ffffff;
+            transition: transform 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Gaya untuk floating order summary */
+        #order-summary-btn {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            z-index: 50;
+            display: none; /* Disembunyikan secara default */
+        }
+
+        /* Gaya Khusus untuk Peta Leaflet */
+        #map {
+            height: 250px; /* Tinggi peta harus ditentukan */
+            width: 100%;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            /* Pastikan peta memiliki posisi relatif atau absolut */
+            position: relative; 
+        }
+
+        /* Override Geocoder control styling */
+        .leaflet-control-geocoder {
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            border-radius: 4px;
+            background-color: white;
+            padding: 5px;
+        }
+
+        /* Gaya untuk menonaktifkan zoom ganda bawaan Leaflet agar double-click bisa memindahkan marker */
+        .leaflet-container {
+            cursor: default;
+        }
+
+        /* Gaya untuk loading spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #F48FB1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-white text-ester-dark font-sans antialiased overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-sm border-b border-ester-light transition-all duration-300 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center cursor-pointer">
+                    <span class="font-logo text-3xl text-ester-cyan tracking-wide">ESTER</span>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-6 items-center">
+                    <a href="#kualitas" class="text-ester-dark hover:text-ester-cyan transition font-medium">Kualitas</a>
+                    <a href="#etalase" class="text-ester-dark hover:text-ester-cyan transition font-medium">Etalase Produk</a>
+                    <a href="#testimoni" class="text-ester-dark hover:text-ester-cyan transition font-medium">Review</a>
+                    <a href="#faq" class="text-ester-dark hover:text-ester-cyan transition font-medium">FAQ</a>
+                    <a href="#dapur" class="text-ester-dark hover:text-ester-cyan transition font-medium">Lokasi Dapur</a>
+                    <!-- Tombol Lihat Pesanan di Navbar -->
+                    <a href="javascript:void(0);" onclick="document.getElementById('order-summary-btn').click()" class="bg-ester-pink text-white px-5 py-2 rounded-full font-semibold hover:bg-pink-400 transition transform btn-interact flex items-center gap-2">
+                        <i class="ph ph-shopping-bag"></i> Lihat Pesanan
+                    </a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-ester-dark focus:outline-none">
+                        <i class="ph ph-list text-3xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Panel -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white absolute w-full shadow-xl">
+            <div class="px-4 pt-2 pb-4 space-y-2">
+                <a href="#kualitas" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-ester-light">Kualitas</a>
+                <a href="#etalase" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-ester-light">Etalase Produk</a>
+                <a href="#testimoni" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-ester-light">Review</a>
+                <a href="#faq" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-ester-light">FAQ</a>
+                <a href="#dapur" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-ester-light">Lokasi Dapur</a>
+                <a href="javascript:void(0);" onclick="document.getElementById('order-summary-btn').click()" class="block text-center px-3 py-2 rounded-full text-base font-bold bg-ester-pink text-white mt-2">Lihat Pesanan</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section (Colorful & Ceria) -->
+    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 dot-pattern overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Text Content -->
+                <div class="space-y-6 text-center lg:text-left animate-fade-in-up">
+                    <div class="inline-block px-4 py-1.5 rounded-full bg-ester-yellow/30 text-ester-dark text-sm font-bold tracking-wider mb-2">
+                        🎉 VIBE SEGAR TIADA DUA
+                    </div>
+                    <h1 class="text-5xl lg:text-6xl font-extrabold text-ester-dark leading-tight">
+                        Ceria Dalam Setiap Sendok.
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-ester-cyan to-ester-pink">Es Puter ESTER!</span>
+                    </h1>
+                    <p class="text-lg text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                        Base Coklat Santan Murni, dipadukan dengan Topping Ceria. Nikmati kebahagiaan cepat sampai di rumahmu!
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                        <a href="#etalase" class="px-8 py-4 bg-ester-cyan text-white rounded-full font-bold shadow-xl hover:bg-cyan-600 btn-interact flex items-center justify-center gap-2">
+                            Mulai Pesan Sekarang <i class="ph ph-confetti text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Image Visual (Updated to reflect Chocolate base with toppings) -->
+                <div class="relative lg:h-[500px] flex justify-center items-center">
+                    <!-- Decorative Shapes -->
+                    <div class="absolute w-40 h-40 bg-ester-pink/60 rounded-full blur-2xl -top-10 -right-10 animate-pulse-slow"></div>
+                    <div class="absolute w-32 h-32 bg-ester-yellow/60 rounded-xl transform rotate-12 bottom-0 left-10 blur-md"></div>
+                    
+                    <!-- Main Image Placeholder (Chocolate Base with Bright Toppings) -->
+                    <div class="relative transform hover:scale-105 transition duration-500 cursor-pointer group shadow-2xl rounded-[30px] overflow-hidden border-8 border-white">
+                        <img src="https://placehold.co/450x450/4E342E/FFFFFF?text=ESTER+Choco+Series" 
+                             alt="Es Puter Coklat Series" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/450x450/4E342E/FFFFFF?text=ESTER+Choco+Series';"
+                             class="w-80 h-80 lg:w-[450px] lg:h-[450px] object-cover group-hover:rotate-1 transition duration-500 z-10">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quality Section -->
+    <section id="kualitas" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-extrabold text-ester-dark mb-12">Kenapa ESTER Bikin Nagih?</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Point 1 -->
+                <div class="p-8 rounded-xl border-4 border-ester-cyan/30 hover:border-ester-cyan transition duration-300 group bg-ester-light">
+                    <i class="ph-fill ph-check-circle text-6xl text-ester-cyan mb-4 group-hover:scale-110 transition"></i>
+                    <h3 class="font-bold text-xl mb-3 text-ester-dark">Santan Murni 100%</h3>
+                    <p class="text-gray-500">Kami pakai perasan santan kelapa asli dan bubuk cokelat premium untuk tekstur gurih & rasa cokelat yang kaya.</p>
+                </div>
+
+                <!-- Point 2 -->
+                <div class="p-8 rounded-xl border-4 border-yellow-400/30 hover:border-yellow-400 transition duration-300 group bg-ester-light">
+                    <i class="ph-fill ph-nut text-6xl text-ester-yellow-medium mb-4 group-hover:scale-110 transition"></i>
+                    <h3 class="font-bold text-xl mb-3 text-ester-dark">Topping Pilihan Ceria</h3>
+                    <p class="text-gray-500">Mulai dari Mangga segar, Meiseis klasik, hingga Cokelat Serut renyah. Semua dicampur saat penyajian!</p>
+                </div>
+
+                <!-- Point 3 -->
+                <div class="p-8 rounded-xl border-4 border-ester-pink/30 hover:border-ester-pink transition duration-300 group bg-ester-light">
+                    <i class="ph-fill ph-truck text-6xl text-ester-pink mb-4 group-hover:scale-110 transition"></i>
+                    <h3 class="font-bold text-xl mb-3 text-ester-dark">Siap Antar Kilat!</h3>
+                    <p class="text-gray-500">Kami menjamin es puter sampai di tangan Anda dalam kondisi beku sempurna. Cek biaya kirim sebelum pesan!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Etalase Produk / Ordering Section -->
+    <section id="etalase" class="py-20 bg-ester-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 space-y-4">
+                <span class="text-ester-cyan font-bold tracking-widest text-sm uppercase">Pilih Sesukamu</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold text-ester-dark">Etalase Es Puter Coklat ESTER</h2>
+                <p class="text-gray-600 max-w-3xl mx-auto">Semua produk menggunakan base Coklat Santan Murni dengan topping pilihanmu.</p>
+            </div>
+            
+            <!-- Category 1: The Fun Cup (Interactive Ordering) -->
+            <div class="mb-16">
+                <h3 class="text-3xl font-extrabold text-ester-pink mb-8 border-b-4 border-ester-pink/50 inline-block pb-2">Kategori 1: The FUN CUP (Premium 200ml)</h3>
+                
+                <!-- Product Grid Container. Filled by JavaScript -->
+                <div id="fun-cup-products" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <!-- Products will be rendered here by renderFunCups() -->
+                </div>
+            </div>
+
+            <!-- Category 2: The Party Pack (Consistent Ordering Interface, but Bigger Card) -->
+            <div class="mb-16">
+                <!-- Warna text judul kategori menggunakan ester-yellow-dark -->
+                <h3 class="text-3xl font-extrabold text-ester-yellow-dark mb-8 border-b-4 border-ester-yellow-dark/50 inline-block pb-2">Kategori 2: The PARTY PACK (Family Size)</h3>
+                <p class="text-gray-600 mb-8 max-w-xl">Pilih ukuran besar untuk stok di kulkas atau pesta.</p>
+                
+                <!-- Product Grid Container. Grid 1 kolom di mobile, 2 kolom di desktop/tablet -->
+                <div id="party-pack-products" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Products will be rendered here by renderPartyPacks() -->
+                </div>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section id="testimoni" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-extrabold text-ester-dark mb-12">Review Pelanggan Paling Ceria</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Review 1 -->
+                <div class="p-6 bg-ester-light rounded-2xl border-2 border-ester-pink/50 relative transform hover:-translate-y-1 transition duration-300 shadow-md">
+                    <div class="flex justify-center text-yellow-400 text-sm mb-3">
+                        <i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i>
+                    </div>
+                    <p class="text-gray-600 italic mb-4">"Choco Mangga nya juara! Perpaduan coklat gurih sama mangga segar beneran bikin nagih. Kemasan oke banget."</p>
+                    <div class="font-bold text-ester-dark text-sm">- Risa A. (Order Family Pack)</div>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="p-6 bg-ester-light rounded-2xl border-2 border-ester-cyan/50 relative transform hover:-translate-y-1 transition duration-300 shadow-md">
+                    <div class="flex justify-center text-yellow-400 text-sm mb-3">
+                        <i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star-half"></i>
+                    </div>
+                    <p class="text-gray-600 italic mb-4">"Choco Roti unik banget, rasanya kayak makan bubur ketan hitam dingin! Porsinya pas, buat ngemil sambil nonton."</p>
+                    <div class="font-bold text-ester-dark text-sm">- Bima (Order Fun Cup)</div>
+                </div>
+
+                <!-- Review 3 -->
+                <div class="p-6 bg-ester-light rounded-2xl border-2 border-ester-yellow/50 relative transform hover:-translate-y-1 transition duration-300 shadow-md">
+                    <div class="flex justify-center text-yellow-400 text-sm mb-3">
+                        <i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i>
+                    </div>
+                    <p class="text-gray-600 italic mb-4">"Pesan Choco Meiseis buat anak-anak di rumah, mereka suka banget. Kemasan 1 Liter-nya gede dan aman sampai tujuan."</p>
+                    <div class="font-bold text-ester-dark text-sm">- Bu Siti (Order Party Pack)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 bg-ester-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="text-ester-cyan font-bold tracking-widest text-sm uppercase">Punya Pertanyaan?</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold text-ester-dark">Tanya Jawab (FAQ)</h2>
+            </div>
+            
+            <div class="max-w-3xl mx-auto space-y-4">
+                <!-- FAQ Item 1 -->
+                <details class="group bg-white p-5 rounded-xl shadow-lg border border-gray-100 transition duration-300">
+                    <summary class="flex justify-between items-center cursor-pointer font-semibold text-lg text-ester-dark list-none">
+                        <span>Apakah ESTER menggunakan 100% santan murni?</span>
+                        <i class="ph ph-caret-down text-xl text-ester-pink transition group-open:rotate-180"></i>
+                    </summary>
+                    <div class="mt-3 pt-3 border-t border-gray-100 text-gray-600">
+                        Ya, kami menjamin ESTER dibuat hanya dengan santan kelapa murni dan bubuk coklat premium, tanpa campuran susu sapi, menjadikannya gurih dan aman untuk yang memiliki alergi laktosa.
+                    </div>
+                </details>
+
+                <!-- FAQ Item 2 -->
+                <details class="group bg-white p-5 rounded-xl shadow-lg border border-gray-100 transition duration-300">
+                    <summary class="flex justify-between items-center cursor-pointer font-semibold text-lg text-ester-dark list-none">
+                        <span>Bagaimana aturan biaya kirimnya?</span>
+                        <i class="ph ph-caret-down text-xl text-ester-pink transition group-open:rotate-180"></i>
+                    </summary>
+                    <div class="mt-3 pt-3 border-t border-gray-100 text-gray-600">
+                        Ongkos kirim GRATIS untuk pengiriman dengan jarak 0 hingga 5 KM dari dapur kami. Jika jarak lebih dari 5 KM, akan dikenakan biaya tambahan Rp 500 per KM kelebihan. Biaya kirim akan dihitung otomatis di peta setelah Anda melakukan Pin Point lokasi.
+                    </div>
+                </details>
+                
+                <!-- FAQ Item 3 -->
+                <details class="group bg-white p-5 rounded-xl shadow-lg border border-gray-100 transition duration-300">
+                    <summary class="flex justify-between items-center cursor-pointer font-semibold text-lg text-ester-dark list-none">
+                        <span>Apakah saya bisa mengambil pesanan langsung ke dapur?</span>
+                        <i class="ph ph-caret-down text-xl text-ester-pink transition group-open:rotate-180"></i>
+                    </summary>
+                    <div class="mt-3 pt-3 border-t border-gray-100 text-gray-600">
+                        Tentu saja! Setelah menekan tombol pesan, Anda akan memiliki pilihan untuk "Ambil di Tempat". Lokasi dapur kami ada di footer halaman ini.
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Floating Order Summary Button -->
+    <button id="order-summary-btn" onclick="showDeliveryMethodModal()" class="bg-ester-cyan text-white p-4 rounded-full shadow-2xl hover:bg-cyan-600 transition hover:scale-105 group flex items-center gap-2 btn-interact">
+        <span id="order-count" class="bg-ester-pink text-white text-xs font-bold px-2 py-0.5 rounded-full absolute -top-1 -left-1">0</span>
+        <i class="ph-fill ph-bag-simple text-2xl"></i>
+        <span class="font-bold hidden sm:inline-block">Pesan via WA</span>
+    </button>
+    
+    <!-- MODAL 1: Pilihan Topping (Hidden by default) -->
+    <div id="topping-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full transform scale-100 transition-all duration-300">
+            <h5 class="font-extrabold text-2xl mb-4 text-ester-dark">Pilih Topping Pack</h5>
+            <p class="text-sm text-gray-600 mb-4">Anda menambahkan <span id="modal-qty" class="font-bold text-ester-cyan">1</span> unit <span id="modal-product-name" class="font-bold text-ester-cyan">Party Pack</span>. Pilih topping untuk unit ini.</p>
+            
+            <div id="topping-options" class="space-y-3 mb-6">
+                <!-- Radio buttons for toppings will be injected here -->
+            </div>
+            
+            <div class="flex justify-end gap-3">
+                <button onclick="closeToppingModal()" class="px-5 py-2 text-ester-dark border border-gray-300 rounded-full font-semibold hover:bg-gray-100 transition">
+                    Batal
+                </button>
+                <button id="confirm-topping-btn" class="px-5 py-2 bg-ester-yellow-medium text-white rounded-full font-semibold hover:bg-yellow-600 transition">
+                    Konfirmasi Topping
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL 2: Konfirmasi Lokasi & Biaya Kirim (Updated with Interactive Map, Geolocation, and Search) -->
+    <div id="shipping-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-lg w-full transform scale-100 transition-all duration-300">
+            <h5 class="font-extrabold text-2xl mb-4 text-ester-dark">Konfirmasi Lokasi & Biaya Kirim</h5>
+            <p class="text-sm text-gray-600 mb-4 font-bold text-ester-cyan">
+                1. Cari lokasi Anda atau klik dua kali (double-click) di peta untuk Pin Point.
+            </p>
+            
+            <label for="input-name" class="block text-sm font-medium text-ester-dark mb-1">Nama Lengkap Penerima:</label>
+            <input type="text" id="input-name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-ester-cyan focus:border-ester-cyan mb-4" placeholder="Contoh: Budi Santoso" required>
+
+            <label for="input-address" class="block text-sm font-medium text-ester-dark mb-1">Alamat Lengkap & Patokan (Teks):</label>
+            <textarea id="input-address" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-ester-cyan focus:border-ester-cyan mb-4" placeholder="Contoh: Jl. Merdeka 12, Samping Masjid Biru, Area Ring Road." required></textarea>
+
+            <!-- MAP CONTAINER -->
+            <label class="block text-sm font-medium text-ester-dark mb-2">2. Pin Point Lokasi Anda (Seret / Double-Click / Gunakan Search):</label>
+            <div id="map"></div>
+            <!-- Hidden inputs to store coordinates -->
+            <input type="hidden" id="input-lat">
+            <input type="hidden" id="input-lng">
+
+            <!-- Detail Jarak dan Biaya Kirim -->
+            <div class="flex flex-col md:flex-row justify-between items-center bg-ester-light p-3 rounded-lg mb-4 text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="ph ph-map-pin-line text-lg text-ester-cyan"></i>
+                    <span class="font-semibold text-ester-dark">Jarak dari Dapur:</span>
+                    <span id="distance-display" class="font-bold text-ester-dark">0.00 KM</span>
+                </div>
+                <div class="flex items-center gap-2 mt-2 md:mt-0">
+                    <i class="ph ph-wallet text-lg text-ester-pink"></i>
+                    <span class="font-semibold text-ester-dark">Biaya Kirim:</span>
+                    <span id="shipping-cost-display" class="font-bold text-xl text-ester-pink">Gratis</span>
+                </div>
+            </div>
+            
+            <p class="text-xs text-gray-500 mb-4 font-semibold">
+                Koordinat Pin Point Anda: <span id="coords-display" class="font-mono text-ester-cyan">Belum diposisikan</span>
+            </p>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeShippingModal(); showDeliveryMethodModal()" class="px-5 py-2 text-ester-dark border border-gray-300 rounded-full font-semibold hover:bg-gray-100 transition">
+                    Kembali
+                </button>
+                <button onclick="proceedToWhatsAppFromShipping()" class="px-5 py-2 bg-ester-cyan text-white rounded-full font-semibold hover:bg-cyan-600 transition">
+                    Lanjut ke WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL 3: Pilihan Metode Pengiriman/Pengambilan (New Modal) -->
+    <div id="delivery-method-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full transform scale-100 transition-all duration-300">
+            <h5 class="font-extrabold text-2xl mb-4 text-ester-dark">Ringkasan Pesanan & Aksi</h5>
+            <p class="text-sm text-gray-600 mb-6">Total <span id="total-items-display" class="font-bold text-ester-pink">0</span> item di keranjang. Pilih aksi Anda:</p>
+            
+            <div class="space-y-4">
+                <!-- LLM FEATURE BUTTON -->
+                <button onclick="showSuggestionModal()" class="w-full p-4 border-2 border-ester-yellow-medium text-ester-dark rounded-xl font-bold hover:bg-ester-yellow/20 transition flex items-center justify-center gap-3 btn-interact">
+                    <i class="ph ph-sparkle text-2xl text-ester-yellow-medium"></i>
+                    ✨ Saran Pairing Ceria
+                </button>
+                
+                <div class="border-t border-gray-200 pt-4 space-y-4">
+                    <h6 class="font-semibold text-sm text-gray-500">Lanjutkan Pemesanan:</h6>
+                    <button onclick="showShippingModal()" class="w-full p-4 border-2 border-ester-pink text-ester-dark rounded-xl font-bold hover:bg-ester-pink/10 transition flex items-center justify-center gap-3">
+                        <i class="ph ph-truck text-2xl text-ester-pink"></i>
+                        Kirim ke Alamat Saya
+                    </button>
+                    <button onclick="proceedToWhatsAppFromPickup()" class="w-full p-4 border-2 border-ester-cyan text-ester-dark rounded-xl font-bold hover:bg-ester-cyan/10 transition flex items-center justify-center gap-3">
+                        <i class="ph ph-storefront text-2xl text-ester-cyan"></i>
+                        Ambil di Tempat (Pickup)
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button onclick="closeDeliveryMethodModal()" class="px-5 py-2 text-ester-dark border border-gray-300 rounded-full font-semibold hover:bg-gray-100 transition">
+                    Batal Pesanan
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL 4: Gemini LLM Suggestion Modal -->
+    <div id="llm-suggestion-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-lg w-full transform scale-100 transition-all duration-300">
+            <h5 class="font-extrabold text-2xl mb-4 text-ester-dark flex items-center gap-2">
+                <i class="ph ph-sparkle text-3xl text-ester-yellow-medium"></i> Saran Pairing Ceria
+            </h5>
+            <p class="text-sm text-gray-600 mb-4">Inilah saran pairing minuman dan camilan dari AI kami, disesuaikan dengan pesanan Anda saat ini.</p>
+            
+            <!-- Loading State -->
+            <div id="suggestion-loading" class="flex justify-center items-center h-32 hidden">
+                <div class="loader"></div>
+                <span class="text-ester-dark ml-4 font-semibold">AI sedang berpikir...</span>
+            </div>
+
+            <!-- Result Display -->
+            <div id="suggestion-result" class="space-y-4 max-h-80 overflow-y-auto p-2 bg-ester-light rounded-lg border border-gray-200">
+                <!-- Suggestions will be injected here -->
+            </div>
+
+            <!-- Error Message -->
+            <div id="suggestion-error" class="text-ester-pink font-semibold p-3 hidden mt-4 border border-ester-pink/50 rounded-lg">
+                <!-- Error messages will be injected here -->
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeSuggestionModal()" class="px-5 py-2 text-ester-dark border border-gray-300 rounded-full font-semibold hover:bg-gray-100 transition">
+                    Tutup
+                </button>
+                <button onclick="generatePairingSuggestion()" class="px-5 py-2 bg-ester-yellow-medium text-white rounded-full font-semibold hover:bg-yellow-600 transition flex items-center gap-2">
+                    <i class="ph ph-repeat text-lg"></i> Coba Lagi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="dapur" class="bg-ester-dark text-ester-light pt-10 pb-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Lokasi Dapur -->
+                <div>
+                    <span class="font-logo text-4xl text-ester-cyan tracking-wide block mb-3">ESTER</span>
+                    <h4 class="text-xl font-bold text-white mb-2">Dapur Utama & Pengiriman</h4>
+                    <p class="text-ester-light/70 mb-4">
+                        Jl. Ceria Bahagia No. 10, Blok A <br>
+                        Jakarta Selatan, 12345
+                    </p>
+                    <p class="text-ester-light/70 font-medium">Jam Operasional: 09.00 - 20.00 WIB</p>
+                    <p class="text-ester-light/70 font-medium">Nomor WA: 0812-3456-7890</p>
+                </div>
+                
+                <!-- Google Maps Embedding -->
+                <div>
+                    <h4 class="text-xl font-bold text-white mb-2">Lihat di Peta</h4>
+                    <div class="aspect-video rounded-lg overflow-hidden shadow-xl border-4 border-ester-light/30">
+                        <!-- Menggunakan koordinat default dari user -->
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3953.5358700000003!2d110.78107957454845!3d-7.85594775464528!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a1773489e2467%3A0xc3c9a626a5b6d17!2sSolo%20Square%20Mall!5e0!3m2!1sen!2sid!4v1700000000000!5m2!1sen!2sid" 
+                            width="100%" 
+                            height="100%" 
+                            style="border:0;" 
+                            allowfullscreen="" 
+                            loading="lazy" 
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-ester-light/50 text-xs pt-8 border-t border-ester-light/20 mt-4 text-center">&copy; 2024 ESTER. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS for Map -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Geocoder JS (Pencarian Lokasi) -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+    <!-- Scripts -->
+    <script>
+        // Data Produk
+        const products = [
+            { id: 'choco-mangga', name: 'Choco Mangga Delight', price: 12000, img: 'https://placehold.co/400x400/4E342E/FFC107?text=Choco+Mangga', category: 'cup' },
+            { id: 'choco-serut', name: 'Choco Serut Extra', price: 12000, img: 'https://placehold.co/400x400/4E342E/00BCD4?text=Choco+Serut', category: 'cup' },
+            { id: 'choco-meiseis', name: 'Choco Meiseis Classic', price: 10000, img: 'https://placehold.co/400x400/4E342E/F48FB1?text=Choco+Meiseis', category: 'cup' },
+            { id: 'choco-roti', name: 'Choco Roti Unik', price: 10000, img: 'https://placehold.co/400x400/4E342E/D4A95B?text=Choco+Roti', category: 'cup' },
+            // Data Party Pack 
+            { id: 'party-500', name: '500ml Base Coklat', price: 35000, img: 'https://placehold.co/400x400/FFC107/4E342E?text=Party+Pack+500ml', category: 'pack', description: 'Porsi medium untuk 2-3 orang.' },
+            { id: 'party-1000', name: '1 Liter Base Coklat', price: 65000, img: 'https://placehold.co/400x400/FFC107/4E342E?text=Party+Pack+1L', category: 'pack', description: 'Ukuran hemat untuk keluarga.' },
+        ];
+        
+        // List Topping yang tersedia
+        const availableToppings = [
+            'Mangga Segar', 'Serut Coklat', 'Meiseis Pelangi', 'Kacang Mede', 'Roti Tawar'
+        ];
+
+        // State untuk menyimpan kuantitas (untuk tampilan tombol)
+        let orderItems = {}; 
+        // State untuk menyimpan detail unit Party Pack (penting untuk mencatat topping)
+        let packDetails = []; 
+        let currentModalProductId = null; // Menyimpan ID produk yang sedang diproses di modal
+        
+        // --- KONSTANTA DAPUR & PETA ---
+        const KITCHEN_LAT = -7.855947; 
+        const KITCHEN_LNG = 110.783569;
+        const DEFAULT_ZOOM = 13;
+        const FREE_SHIPPING_DISTANCE_KM = 5; // Jarak gratis kirim
+        const SHIPPING_COST_PER_KM = 500; // Biaya per km kelebihan
+
+        // State untuk Peta
+        let map = null;
+        let marker = null;
+        let currentShippingCost = 0;
+        let currentDistanceKm = 0;
+        
+        // --- KONSTANTA GEMINI API ---
+        const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
+        const apiKey = ""; // API Key akan disediakan oleh Canvas
+
+        // Fungsi untuk memformat angka menjadi mata uang Rupiah
+        function formatRupiah(number) {
+            // Memastikan number adalah angka, jika tidak, kembalikan 'N/A' atau 0
+            if (typeof number !== 'number' || isNaN(number)) {
+                return 'N/A';
+            }
+
+            if (number === 0) {
+                 return 'Gratis';
+            }
+
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+        }
+
+        // --- HAVERSINE FORMULA (Untuk menghitung jarak antara dua titik koordinat di Bumi) ---
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius Bumi dalam kilometer
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = 
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c; // Jarak dalam KM
+            return distance;
+        }
+
+        // --- FUNGSI PERHITUNGAN ONGKIR & UPDATE UI PENGIRIMAN ---
+        function calculateShipping(lat, lng) {
+            // Hitung Jarak
+            const distance = calculateDistance(KITCHEN_LAT, KITCHEN_LNG, lat, lng);
+            currentDistanceKm = distance;
+
+            // Hitung Biaya Kirim
+            let cost = 0;
+            if (distance > FREE_SHIPPING_DISTANCE_KM) {
+                const excessDistance = distance - FREE_SHIPPING_DISTANCE_KM;
+                // Pembulatan ke atas (ceil) untuk kelebihan KM
+                cost = Math.ceil(excessDistance) * SHIPPING_COST_PER_KM; 
+            }
+            currentShippingCost = cost;
+
+            // Update Tampilan UI
+            document.getElementById('distance-display').textContent = `${distance.toFixed(2)} KM`;
+            document.getElementById('shipping-cost-display').textContent = formatRupiah(cost);
+            updateCoordsDisplay(lat, lng);
+        }
+        
+        // --- LOGIC MODAL TOPPING PARTY PACK ---
+        
+        function showToppingModal(productId) {
+            currentModalProductId = productId;
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            // Update modal text
+            document.getElementById('modal-product-name').textContent = product.name;
+            document.getElementById('modal-qty').textContent = 1; 
+
+            // Render topping options
+            const optionsContainer = document.getElementById('topping-options');
+            optionsContainer.innerHTML = availableToppings.map((topping, index) => `
+                <label class="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer hover:bg-ester-light transition has-[:checked]:bg-ester-yellow/20 has-[:checked]:border-ester-yellow-medium">
+                    <input type="radio" name="selectedTopping" value="${topping}" class="form-radio text-ester-yellow-medium h-5 w-5" ${index === 0 ? 'checked' : ''}>
+                    <span class="font-medium text-ester-dark">${topping}</span>
+                </label>
+            `).join('');
+
+            // Show modal
+            document.getElementById('topping-modal').classList.remove('hidden');
+        }
+
+        function closeToppingModal() {
+            document.getElementById('topping-modal').classList.add('hidden');
+            currentModalProductId = null;
+        }
+
+        function confirmTopping() {
+            const selectedRadio = document.querySelector('input[name="selectedTopping"]:checked');
+            if (!selectedRadio || !currentModalProductId) {
+                return;
+            }
+
+            const topping = selectedRadio.value;
+            const product = products.find(p => p.id === currentModalProductId);
+            
+            if (product) {
+                // Add the unit to packDetails
+                packDetails.push({
+                    uniqueId: `pack-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    productId: product.id,
+                    topping: topping,
+                    price: product.price
+                });
+
+                // Update orderItems (qty counter for display)
+                orderItems[product.id] = (orderItems[product.id] || 0) + 1;
+                
+                // Update UI elements
+                updateUI(product.id);
+            }
+            
+            closeToppingModal();
+        }
+
+        // --- LOGIC MODAL SHIPPING & DELIVERY METHOD ---
+
+        // Fungsi untuk memperbarui tampilan koordinat di modal
+        function updateCoordsDisplay(lat, lng) {
+            const display = document.getElementById('coords-display');
+            document.getElementById('input-lat').value = lat.toFixed(6);
+            document.getElementById('input-lng').value = lng.toFixed(6);
+            display.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+        }
+        
+        // Fungsi untuk memindahkan marker dan memperbarui koordinat
+        function setMarkerAndCenter(lat, lng) {
+            const newLatLng = L.latLng(lat, lng);
+            marker.setLatLng(newLatLng);
+            map.setView(newLatLng, 15); // Zoom lebih dekat ke lokasi user
+            
+            // Panggil perhitungan ongkir
+            calculateShipping(lat, lng);
+        }
+
+        // Inisialisasi Peta Leaflet dengan Geolocation dan Geocoding
+        function initMap() {
+            if (map) {
+                map.remove(); // Hapus instance map lama jika ada
+            }
+
+            // 1. Inisialisasi Peta dengan koordinat Dapur sebagai default
+            map = L.map('map', { 
+                center: [KITCHEN_LAT, KITCHEN_LNG], 
+                zoom: DEFAULT_ZOOM,
+                zoomControl: true, // Biarkan zoom control
+                doubleClickZoom: false // MATIKAN ZOOM BAWAAN agar double-click bisa memindahkan marker
+            });
+
+            // Tambahkan tile layer dari OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // 2. Tambahkan Marker yang dapat diseret (Drag Marker)
+            marker = L.marker([KITCHEN_LAT, KITCHEN_LNG], { 
+                draggable: true 
+            }).addTo(map)
+                .bindPopup('Geser saya ke lokasi pengiriman Anda.')
+                .openPopup();
+            
+            // Perbarui input tersembunyi & hitung ongkir saat marker diseret
+            marker.on('dragend', function(e) {
+                const latlng = marker.getLatLng();
+                calculateShipping(latlng.lat, latlng.lng);
+            });
+            
+            // Set initial coordinates and cost
+            calculateShipping(KITCHEN_LAT, KITCHEN_LNG);
+
+            // 3. Tambahkan Kontrol Pencarian Lokasi (Geocoding Control)
+            L.Control.geocoder({
+                placeholder: 'Cari Alamat...',
+                defaultMarkGeocode: false // Jangan tambahkan marker baru secara default
+            }).on('markgeocode', function(e) {
+                const { lat, lng } = e.geocode.center;
+                setMarkerAndCenter(lat, lng); // Pindahkan marker ke hasil pencarian & hitung ongkir
+            }).addTo(map);
+
+            // 4. Tambahkan Pin Point via Double Click
+            map.on('dblclick', function(e) {
+                const { lat, lng } = e.latlng;
+                setMarkerAndCenter(lat, lng); // Pindahkan marker ke lokasi double click & hitung ongkir
+                L.popup()
+                    .setLatLng(e.latlng)
+                    .setContent("Pin Point Baru!")
+                    .openOn(map);
+            });
+
+            // 5. Coba Akses Lokasi (Geolocation) (Prioritas kedua setelah default)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        setMarkerAndCenter(latitude, longitude); // Pindahkan ke lokasi user & hitung ongkir
+                        
+                        // Tampilkan pesan sukses sebentar
+                        L.popup()
+                            .setLatLng([latitude, longitude])
+                            .setContent("Lokasi Anda saat ini (otomatis)!")
+                            .openOn(map);
+                    },
+                    (error) => {
+                        console.error("Geolocation failed:", error);
+                        // Jika gagal, tetap di posisi default Dapur. calculateShipping sudah dipanggil di awal.
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            } else {
+                console.warn("Geolocation tidak didukung oleh browser ini.");
+            }
+
+            // Penting: Memastikan peta me-render ulang setelah modal muncul (untuk menghindari masalah tile)
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100); 
+        }
+
+        // New Entry Point: Delivery Method Modal
+        function showDeliveryMethodModal() {
+            // Cek apakah pesanan kosong
+            const totalItems = Object.values(orderItems).reduce((sum, qty) => sum + qty, 0) + packDetails.length;
+            if (totalItems === 0) {
+                 showEmptyOrderAlert();
+                 return;
+            }
+            // Update total items display
+            document.getElementById('total-items-display').textContent = totalItems;
+            // Show new modal
+            document.getElementById('delivery-method-modal').classList.remove('hidden');
+        }
+
+        function closeDeliveryMethodModal() {
+            document.getElementById('delivery-method-modal').classList.add('hidden');
+        }
+
+        function showShippingModal() {
+            closeDeliveryMethodModal();
+            document.getElementById('shipping-modal').classList.remove('hidden');
+            // Inisialisasi peta saat modal pengiriman dibuka
+            initMap();
+        }
+        
+        function closeShippingModal() {
+            document.getElementById('shipping-modal').classList.add('hidden');
+            // Opsional: Hapus map object ketika modal ditutup
+            if (map) {
+                map.remove();
+                map = null;
+                marker = null;
+            }
+        }
+        
+        // Final step from Shipping Modal (Kirim)
+        function proceedToWhatsAppFromShipping() {
+            const nameInput = document.getElementById('input-name').value;
+            const addressInput = document.getElementById('input-address').value;
+            const lat = document.getElementById('input-lat').value;
+            const lng = document.getElementById('input-lng').value;
+            
+            // Validasi sederhana
+            if (nameInput.trim() === "" || addressInput.trim() === "" || lat.trim() === "" || lng.trim() === "") {
+                const modalHtml = `
+                    <div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[101]">
+                        <div class="bg-white p-6 rounded-xl shadow-2xl text-center max-w-xs transform scale-100 transition-all duration-300">
+                            <i class="ph ph-warning-circle text-ester-pink text-4xl mb-3"></i>
+                            <h5 class="font-bold text-lg mb-2">Perhatian!</h5>
+                            <p class="text-sm text-gray-600 mb-4">Nama, Alamat Lengkap, dan Pin Point di peta wajib diisi/ditandai untuk pengiriman.</p>
+                            <button onclick="document.getElementById('alert-modal').remove()" class="px-4 py-2 bg-ester-pink text-white rounded-full font-semibold hover:bg-pink-400">
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                return; 
+            }
+            
+            // Melewatkan semua detail ke fungsi pembuatan link WA
+            generateWhatsAppLink(currentShippingCost, 'Kirim', currentDistanceKm, nameInput, addressInput, lat, lng);
+        }
+
+        // Final step from Delivery Modal (Ambil di Tempat)
+        function proceedToWhatsAppFromPickup() {
+            // Untuk Ambil di Tempat, Pin Point/Nama/Alamat tidak relevan
+            generateWhatsAppLink(0, 'Ambil di Tempat', 0, '', '', '', '');
+        }
+
+        // --- LOGIC MODAL GEMINI SUGGESTION ---
+
+        // Fungsi untuk mengumpulkan ringkasan pesanan (Fun Cup & Party Pack)
+        function getCartSummaryForLLM() {
+            let summary = [];
+
+            // 1. Ringkasan Fun Cup (dikelompokkan)
+            const funCups = products.filter(p => p.category === 'cup');
+            funCups.forEach(product => {
+                const qty = orderItems[product.id] || 0;
+                if (qty > 0) {
+                    summary.push(`${qty} unit Es Puter ${product.name}`);
+                }
+            });
+
+            // 2. Ringkasan Party Pack (dikelompokkan berdasarkan topping)
+            const groupedPacks = packDetails.reduce((acc, item) => {
+                const product = products.find(p => p.id === item.productId);
+                const key = `${product.name} (Topping: ${item.topping})`;
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+            
+            Object.keys(groupedPacks).forEach(key => {
+                summary.push(`${groupedPacks[key]} unit ${key}`);
+            });
+
+            if (summary.length === 0) {
+                return "Keranjang kosong. Beri saran umum pairing dessert coklat gurih.";
+            }
+
+            return summary.join(', ');
+        }
+        
+        // Menampilkan Modal Saran
+        function showSuggestionModal() {
+            const totalItems = Object.values(orderItems).reduce((sum, qty) => sum + qty, 0) + packDetails.length;
+            if (totalItems === 0) {
+                 showEmptyOrderAlert();
+                 return;
+            }
+
+            closeDeliveryMethodModal();
+            document.getElementById('llm-suggestion-modal').classList.remove('hidden');
+            // Panggil generator saat modal dibuka
+            generatePairingSuggestion();
+        }
+
+        // Menutup Modal Saran
+        function closeSuggestionModal() {
+            document.getElementById('llm-suggestion-modal').classList.add('hidden');
+        }
+        
+        // Fungsi Utama untuk Memanggil Gemini API
+        async function generatePairingSuggestion() {
+            const resultDiv = document.getElementById('suggestion-result');
+            const loadingDiv = document.getElementById('suggestion-loading');
+            const errorDiv = document.getElementById('suggestion-error');
+            
+            // Sembunyikan hasil lama dan error, tampilkan loading
+            resultDiv.innerHTML = '';
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            const cartSummary = getCartSummaryForLLM();
+            const userQuery = `Saya memesan es puter dengan rincian: ${cartSummary}. Beri saya 1 saran minuman non-alkohol yang paling cocok dan 1 saran camilan/snack lokal Indonesia yang akan menjadi pelengkap terbaik. Jawab dalam format yang menarik, mudah dibaca, dan ceria.`;
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+            const systemPrompt = "Anda adalah seorang ahli pairing makanan dan minuman yang bersemangat. Berikan rekomendasi dalam bahasa Indonesia. Batasi jawaban Anda maksimal 3 paragraf. Gunakan emoji dan gaya bahasa yang ceria dan energik.";
+            
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            const maxRetries = 3;
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (text) {
+                        // Tampilkan Hasil
+                        resultDiv.innerHTML = `<p class="whitespace-pre-wrap text-base text-ester-dark">${text}</p>`;
+                        resultDiv.classList.remove('hidden');
+                        break; // Keluar dari loop jika sukses
+                    } else {
+                         throw new Error("Gagal mendapatkan teks saran dari AI.");
+                    }
+
+                } catch (error) {
+                    console.error(`Attempt ${attempt + 1} failed:`, error);
+                    if (attempt === maxRetries - 1) {
+                        errorDiv.textContent = `Terjadi kesalahan: ${error.message}. Coba lagi!`;
+                        errorDiv.classList.remove('hidden');
+                        break;
+                    }
+                    // Implementasi exponential backoff
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                } finally {
+                    // Sembunyikan loading setelah setiap percobaan atau setelah hasil ditemukan
+                    if (attempt === maxRetries - 1 || resultDiv.classList.contains('hidden') === false) {
+                        loadingDiv.classList.add('hidden');
+                    }
+                }
+            }
+        }
+
+        // --- RENDER & QUANTITY LOGIC ---
+
+        // Fungsi pembantu untuk memperbarui tampilan Qty/Tombol Beli
+        function updateUI(productId) {
+            const controlDiv = document.getElementById(`qty-control-${productId}`);
+            const beliBtn = document.getElementById(`btn-beli-${productId}`);
+            const qtyElement = document.getElementById(`qty-${productId}`);
+            
+            const currentQty = orderItems[productId] || 0;
+            
+            if (currentQty <= 0) {
+                beliBtn.classList.remove('hidden');
+                if(controlDiv) controlDiv.classList.add('hidden'); // Cek null untuk jaga-jaga
+            } else {
+                beliBtn.classList.add('hidden');
+                if(controlDiv) controlDiv.classList.remove('hidden');
+            }
+            
+            if (qtyElement) qtyElement.textContent = currentQty;
+            updateOrderSummary();
+        }
+
+        // 1. Render Produk Fun Cup
+        function renderFunCups() {
+            const container = document.getElementById('fun-cup-products');
+            const funCups = products.filter(p => p.category === 'cup');
+            
+            container.innerHTML = funCups.map(product => `
+                <div class="rounded-xl overflow-hidden product-card p-2 text-center" id="card-${product.id}">
+                    <!-- Foto Produk -->
+                    <img src="${product.img}" alt="Es Puter Coklat Topping ${product.name}" 
+                         onerror="this.onerror=null;this.src='${product.img}';"
+                         class="w-full h-auto rounded-lg mb-3 object-cover shadow-lg aspect-square">
+                    
+                    <!-- Nama dan Harga -->
+                    <h4 class="font-bold text-lg text-ester-dark">${product.name}</h4>
+                    <p class="text-xl font-extrabold text-ester-pink mb-4">${formatRupiah(product.price)}</p>
+                    
+                    <!-- Tombol Beli (Default state: visible when qty=0) -->
+                    <button id="btn-beli-${product.id}" onclick="changeQuantity('${product.id}', 1, 'cup')" class="w-full mt-2 px-4 py-2 bg-ester-pink text-white rounded-full font-semibold hover:bg-pink-400 transition btn-interact">
+                        Beli
+                    </button>
+
+                    <!-- Quantity & Action Buttons (Hidden by default, shown when qty > 0) -->
+                    <div id="qty-control-${product.id}" class="hidden flex items-center justify-between gap-2 p-2 bg-white rounded-full border border-gray-200 shadow-inner mt-2">
+                        <button onclick="changeQuantity('${product.id}', -1, 'cup')" class="p-1 rounded-full text-white bg-ester-cyan hover:bg-cyan-600 transition">
+                            <i class="ph ph-minus text-lg"></i>
+                        </button>
+                        <span id="qty-${product.id}" class="font-bold text-lg w-8 text-center">${orderItems[product.id] || 0}</span> 
+                        <button onclick="changeQuantity('${product.id}', 1, 'cup')" class="p-1 rounded-full text-white bg-ester-cyan hover:bg-cyan-600 transition">
+                            <i class="ph ph-plus text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 2. Render Produk Party Pack
+        function renderPartyPacks() {
+            const container = document.getElementById('party-pack-products');
+            const partyPacks = products.filter(p => p.category === 'pack');
+
+            container.innerHTML = partyPacks.map(product => `
+                <div class="rounded-xl overflow-hidden product-card p-4 text-center" id="card-${product.id}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                        <!-- Foto Produk -->
+                        <img src="${product.img}" alt="Es Puter Party Pack ${product.name}" 
+                             onerror="this.onerror=null;this.src='${product.img}';"
+                             class="w-full h-auto rounded-lg object-cover shadow-lg aspect-square">
+                        
+                        <div class="text-left p-2">
+                            <!-- Nama dan Harga -->
+                            <h4 class="font-bold text-xl text-ester-dark mb-1">${product.name}</h4>
+                            <!-- Warna harga menggunakan kuning medium yang sudah digelapkan sedikit -->
+                            <p class="text-2xl font-extrabold text-ester-yellow-medium mb-2">${formatRupiah(product.price)}</p>
+                            <p class="text-gray-500 mb-4 text-sm">${product.description}</p>
+                            
+                            <!-- Tombol Beli (Menggunakan warna Party Pack untuk membedakan) -->
+                            <button id="btn-beli-${product.id}" onclick="changeQuantity('${product.id}', 1, 'pack')" class="w-full mt-2 px-4 py-2 bg-ester-yellow-medium text-white rounded-full font-semibold hover:bg-yellow-600 transition btn-interact">
+                                Beli
+                            </button>
+
+                            <!-- Quantity & Action Buttons (Hidden by default, shown when qty > 0) -->
+                            <div id="qty-control-${product.id}" class="hidden flex items-center justify-between gap-2 p-2 bg-white rounded-full border border-gray-200 shadow-inner mt-2">
+                                <button onclick="changeQuantity('${product.id}', -1, 'pack')" class="p-1 rounded-full text-white bg-ester-cyan hover:bg-cyan-600 transition">
+                                    <i class="ph ph-minus text-lg"></i>
+                                </button>
+                                <span id="qty-${product.id}" class="font-bold text-lg w-8 text-center">${orderItems[product.id] || 0}</span> 
+                                <button onclick="changeQuantity('${product.id}', 1, 'pack')" class="p-1 rounded-full text-white bg-ester-cyan hover:bg-cyan-600 transition">
+                                    <i class="ph ph-plus text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 3. Mengubah Kuantitas (Quantity) & Mengatur Tampilan Tombol/Input
+        function changeQuantity(productId, delta, category) {
+            let currentQty = orderItems[productId] || 0;
+            let newQty = currentQty + delta;
+            
+            if (category === 'cup') {
+                // Logika Fun Cup (Sederhana)
+                if (newQty <= 0) {
+                    delete orderItems[productId];
+                } else {
+                    orderItems[productId] = newQty;
+                }
+            } else if (category === 'pack') {
+                // Logika Party Pack (Kompleks karena butuh detail topping)
+                if (delta > 0) {
+                    // Penambahan: Buka modal untuk memilih topping
+                    showToppingModal(productId);
+                    return; // Keluar dari fungsi, updateUI akan dipanggil setelah konfirmasi modal
+                } else if (delta < 0 && currentQty > 0) {
+                    // Pengurangan: Hapus unit terakhir yang ditambahkan dari packDetails
+                    
+                    // Cari dan hapus unit terakhir dengan productId ini
+                    let indexToRemove = -1;
+                    for (let i = packDetails.length - 1; i >= 0; i--) {
+                        if (packDetails[i].productId === productId) {
+                            indexToRemove = i;
+                            break;
+                        }
+                    }
+
+                    if (indexToRemove !== -1) {
+                        packDetails.splice(indexToRemove, 1);
+                        orderItems[productId] = currentQty - 1;
+                        if (orderItems[productId] <= 0) {
+                             delete orderItems[productId];
+                        }
+                    }
+                }
+            }
+            
+            updateUI(productId); // Update UI setelah perubahan qty Fun Cup atau Pack
+        }
+
+        // 4. Update Ringkasan Pesanan (Floating Button)
+        function updateOrderSummary() {
+            const summaryBtn = document.getElementById('order-summary-btn');
+            const countSpan = document.getElementById('order-count');
+            
+            // Hitung total item Fun Cup
+            const funCupCount = products.filter(p => p.category === 'cup')
+                                        .map(p => orderItems[p.id] || 0)
+                                        .reduce((sum, qty) => sum + qty, 0);
+                                        
+            // Hitung total item Party Pack (berdasarkan packDetails)
+            const partyPackCount = packDetails.length;
+
+            const totalItems = funCupCount + partyPackCount;
+            
+            if (totalItems > 0) {
+                countSpan.textContent = totalItems;
+                summaryBtn.style.display = 'flex';
+            } else {
+                summaryBtn.style.display = 'none';
+            }
+        }
+        
+        function showEmptyOrderAlert() {
+            const modalHtml = `
+                <div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+                    <div class="bg-white p-6 rounded-xl shadow-2xl text-center max-w-xs transform scale-100 transition-all duration-300">
+                        <i class="ph ph-warning-circle text-ester-pink text-4xl mb-3"></i>
+                        <h5 class="font-bold text-lg mb-2">Oops, Pesanan Kosong!</h5>
+                        <p class="text-sm text-gray-600 mb-4">Silakan tambahkan minimal satu Es Puter ke daftar pesanan Anda.</p>
+                        <button onclick="document.getElementById('alert-modal').remove()" class="px-4 py-2 bg-ester-pink text-white rounded-full font-semibold hover:bg-pink-400">
+                            Mengerti
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // 5. Membuat Link WhatsApp (Dipanggil setelah konfirmasi Jarak/Ongkir)
+        function generateWhatsAppLink(shippingCost, deliveryMethod, distance, customerName, customerAddress, lat, lng) {
+            const phoneNumber = "6281234567890"; 
+            
+            closeShippingModal(); // Pastikan modal shipping ditutup
+            closeDeliveryMethodModal(); // Pastikan modal delivery ditutup
+            closeSuggestionModal(); // Pastikan modal saran juga ditutup
+
+            // Hitung Total Harga Produk
+            let totalProductPrice = 0;
+            
+            // 1. Hitung total Fun Cup
+            const funCups = products.filter(p => p.category === 'cup');
+            let funCupItems = "";
+            
+            funCups.forEach(product => {
+                const qty = orderItems[product.id] || 0;
+                if (qty > 0) {
+                    const subtotal = qty * product.price;
+                    funCupItems += `- ${product.name} (${formatRupiah(product.price)}) x ${qty} = ${formatRupiah(subtotal)}\n`;
+                    totalProductPrice += subtotal;
+                }
+            });
+
+            // 2. Hitung total Party Pack (berdasarkan detail topping)
+            let partyPackItems = "";
+            
+            // Grouping party packs by name and topping
+            const groupedPacks = packDetails.reduce((acc, item) => {
+                const product = products.find(p => p.id === item.productId);
+                const key = `${product.name} - Topping: ${item.topping}`;
+                acc[key] = (acc[key] || 0) + 1;
+                totalProductPrice += item.price;
+                return acc;
+            }, {});
+            
+            Object.keys(groupedPacks).forEach(key => {
+                const qty = groupedPacks[key];
+                // Harga Party Pack diambil dari produk asli 
+                const productName = key.substring(0, key.indexOf(' - Topping')); 
+                const product = products.find(p => p.name === productName);
+                const price = product ? product.price : 0;
+                const subtotal = qty * price;
+
+                partyPackItems += `- ${key} x ${qty} = ${formatRupiah(subtotal)}\n`;
+            });
+
+            const totalFinalPrice = totalProductPrice + shippingCost; 
+
+            // Mulai buat pesan WhatsApp
+            let message = "Halo ESTER yang Ceria! \n\nSaya ingin memesan es puter dengan rincian berikut:\n";
+            
+            // Tambahkan Detail Penerima jika pengiriman
+            if (deliveryMethod === 'Kirim') {
+                message += `\n--- DETAIL PENGIRIMAN ---\n`;
+                message += `Nama: ${customerName.trim()}\n`;
+                message += `Alamat Lengkap (Teks): ${customerAddress.trim()}\n`; 
+                // Sertakan koordinat Pin Point
+                message += `Jarak dari Dapur: ${distance.toFixed(2)} KM\n`;
+                message += `Pin Point Lokasi (Admin WAJIB cek di map): Lat=${lat}, Lng=${lng}\n`;
+                // Buatkan juga link Google Maps agar admin mudah cek
+                message += `Link Google Map (Cek Pin): https://www.google.com/maps/search/?api=1&query=${lat},${lng}\n`;
+                message += `\n`;
+            }
+
+            if (funCupItems) {
+                message += "\n--- Kategori Fun Cup (200ml) ---\n";
+                message += funCupItems;
+            }
+
+            if (partyPackItems) {
+                message += "\n--- Kategori Party Pack (Besar & Topping Custom) ---\n";
+                message += partyPackItems;
+            }
+
+            // Total dan Biaya Kirim
+            message += `\n----------------------------\n`;
+            message += `METODE PENGAMBILAN: ${deliveryMethod}\n`;
+            message += `SUBTOTAL PRODUK: ${formatRupiah(totalProductPrice)}\n`;
+            
+            if (deliveryMethod === 'Kirim') {
+                message += `BIAYA KIRIM: ${formatRupiah(shippingCost)}\n`;
+                message += `(GRATIS 0-5 KM, Rp ${SHIPPING_COST_PER_KM} per KM kelebihan)\n`;
+                message += `TOTAL AKHIR PESANAN (PRODUK + ONGKIR): ${formatRupiah(totalFinalPrice)}\n`; 
+            } else {
+                // Untuk Ambil di Tempat
+                message += `BIAYA KIRIM: Gratis (Diambil di Tempat)\n`;
+                message += `TOTAL AKHIR PESANAN: ${formatRupiah(totalProductPrice)}\n`;
+            }
+            
+            message += `\nMohon konfirmasi pesanan saya. Terima kasih!`;
+
+            const encodedMessage = encodeURIComponent(message);
+            const url = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            window.open(url, '_blank');
+
+            // Reset state pesanan setelah berhasil mengirim ke WA
+            orderItems = {};
+            packDetails = [];
+            updateOrderSummary();
+        }
+
+
+        // Global setup and event listeners
+        window.onload = function() {
+            // Render semua etalase saat halaman dimuat
+            renderFunCups();
+            renderPartyPacks();
+            
+            // Event listener untuk tombol Konfirmasi di modal topping
+            document.getElementById('confirm-topping-btn').addEventListener('click', confirmTopping);
+            
+            // Mobile Menu Toggle
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('hidden');
+            });
+            
+            // Sticky Navbar Effect
+            window.addEventListener('scroll', () => {
+                const navbar = document.querySelector('nav');
+                if (window.scrollY > 50) {
+                    navbar.classList.add('shadow-md');
+                } else {
+                    navbar.classList.remove('shadow-md');
+                }
+            });
+            
+            // Pastikan floating button disembunyikan jika tidak ada item
+            updateOrderSummary(); 
+        }
+    </script>
+</body>
+</html>
